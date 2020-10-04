@@ -1,64 +1,15 @@
-﻿using a01.Shared.Functions;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using UnitsNet;
 
 namespace a01.Shared.Objects
 {
-    public class StairCase
-    {
-        public StairCase(double area,Portal portalType, Floors floors,DoorOutside doorOutside,int quDoorOutside,DoorInside doorInside)
-        {
-            Area = area;
-            PortalType = portalType;
-            Floors = floors;
-            DoorOutside = doorOutside;
-            QuDoorOutside = quDoorOutside;
-            DoorInside = doorInside;
-        }
-
-        private double ksiR;
-
-        public double Area { get; set; }
-        public Floors Floors { get; set; }
-        public DoorOutside DoorOutside { get; set; }
-        public DoorInside DoorInside { get; set; }
-        public int QuDoorOutside { get; set; }
-        public Portal PortalType { get; set; }
-        public double KsiR
-        {
-            get
-            {
-                if (PortalType == Portal.Straight)
-                {
-                    ksiR = 0;
-                }
-                else if (PortalType == Portal.Angular)
-                {
-                    ksiR = 0.99;
-                }
-                else if (PortalType == Portal.ZShape)
-                {
-                    ksiR = 2.9;
-                }
-                return ksiR;
-            }
-        }
-        public enum Portal
-        {
-            Straight,
-            Angular,
-            ZShape
-        }
-    }
     //пока что нет возможности задания отметки надземного этажа (например если ЛК начинается на 2-ом этаже и отметка этого этажа отлична от 0). При необходимости добавить
     public class Floors
     {
         
-        public Floors(int first,int qu)
+        public Floors(int first,int qu,double exhaustShaftTopOffsetFromRoof)
         {
             Qu = qu;
             NotSpecified = Qu;
@@ -72,6 +23,28 @@ namespace a01.Shared.Objects
                 Last = Qu + First;
             }
             else if (First==0)
+            {
+                throw new ArithmeticException($"Индекс первого этажа не может быть {0}. Первый этаж может быть или больше нуля : 1,2,3 итд, или меньше нуля -1,-2,-3 итд");
+            }
+            ExhaustShaftTopOffsetFromRoof = exhaustShaftTopOffsetFromRoof;
+            //добавление метода в событие
+            LevelsComplete += CompLevels;
+        }
+        //перегрузка конструктора с высотой вытяжной шахты над уровнем кровли по умолчанию
+        public Floors(int first, int qu)
+        {
+            Qu = qu;
+            NotSpecified = Qu;
+            First = first;
+            if (First > 0)
+            {
+                Last = Qu + First - 1;
+            }
+            else if (First < 0)
+            {
+                Last = Qu + First;
+            }
+            else if (First == 0)
             {
                 throw new ArithmeticException($"Индекс первого этажа не может быть {0}. Первый этаж может быть или больше нуля : 1,2,3 итд, или меньше нуля -1,-2,-3 итд");
             }
@@ -109,11 +82,15 @@ namespace a01.Shared.Objects
         public int Last { get; set; }
         public SortedList<int, (double height, double level)> Levels { get; set; } = new SortedList<int, (double height, double level)>();
         public double BuildingHeightOverall { get; set; }
+        private double heightFromFirstToTopOfTheShaft;
+
         public double BuildingHeightBelowZero { get; set; }
         public double BuildingHeightAboveZero { get; set; }
         public double FirstFloorLevel { get; set; }
         public double LastFloorLevel { get; set; }
         public double RoofFloorLevel { get; set; }
+        public double ExhaustShaftTopOffsetFromRoof { get; set; } = 2;
+        public double HeightFromFirstToTopOfTheShaft { get => RoofFloorLevel+ExhaustShaftTopOffsetFromRoof; internal set => heightFromFirstToTopOfTheShaft = value; }
 
         //этот метод выполняется только тогда, когда все этажи добавлены, то есть переменная NotSpecified==0
         public void CompLevels()
@@ -229,54 +206,6 @@ namespace a01.Shared.Objects
                 Levels[key] = (Levels[key].height, 0);
             }
         }
-    }
-    public class DoorOutside
-    {
-        public DoorOutside(double width,double height)
-        {
-            Width = width;
-            Height = height;
-            Area = width * height;
-        }
-
-        public double Width { get; set; }
-        public double Height { get; set; }
-        public double Area { get; set; }
-    }
-    public class DoorInside
-    {
-        public DoorInside(double width, double height,Type type,Climate climate)
-        {
-            Width = width;
-            Height = height;
-            Area = width * height;
-            if (type==Type.Usual)
-            {
-                SmokeResistance = 5300 / climate.DensitySupply;
-            }
-            else if (type==Type.SmokeResistant)
-            {
-                SmokeResistance = 60000 / climate.DensitySupply;
-            }
-        }
-        public DoorInside(double width, double height, double smokeResistance)
-        {
-            Width = width;
-            Height = height;
-            SmokeResistance = smokeResistance;
-            Area = width * height;
-        }
-
-        public double Width { get; set; }
-        public double Height { get; set; }
-        public double Area { get; set; }
-        public double SmokeResistance { get; set; }
-        public enum Type
-        {
-            Usual,
-            SmokeResistant
-        }
-
     }
 
 }

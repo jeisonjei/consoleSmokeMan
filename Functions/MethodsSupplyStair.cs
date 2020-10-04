@@ -44,9 +44,10 @@ namespace a01.Shared.Functions
                 v = Gsum / (Climate.DensitySupply * Stair.Area);
                 p = p + 0.5 * 60 * Climate.DensitySupply * Math.Pow(v, 2);
                 Gsd = Comp29Comp30(p, lev.Value.level);
-                //Gsw = Comp31(0.75, p, lev.Value.level);
-                Gsum = Gsum + Gsd;// + Gsw;
-                EachFloorResults.Add(new EachFloorResult { LevelKey = lev.Key, LevelValue = lev.Value.height, V = v, P = p, Gsd = Gsd, Gsum = Gsum });
+                Stair.Window.CompLeakage(p, lev.Value.level);
+                Gsw = Stair.Window.Leakage;
+                Gsum = Gsum + Gsd + Gsw;
+                EachFloorResults.Add(new EachFloorResult { LevelKey = lev.Key, LevelValue = lev.Value.height, V = v, P = p, Gsd = Gsd, Gsw=Gsw, Gsum = Gsum });
             }
             Lv = EachFloorResults.Last().Gsum * 3600 / Climate.DensityOutside;
             var l = EachFloorResults.OrderByDescending(res => res.LevelKey);
@@ -58,7 +59,7 @@ namespace a01.Shared.Functions
             public double V { get; set; }
             public double P { get; set; }
             public double Gsd { get; set; }
-            public double Gsw { get; set; } = 0;
+            public double Gsw { get; set; }
             public double Gsum { get; set; }
         }
         public void CompPwind()
@@ -124,12 +125,12 @@ namespace a01.Shared.Functions
                 double buildingHeightFromFirstToTopOfTheShaft
             )
         {
-            double specificGravityOutside = 3463 / (273 + Climate.TempOutside);
-            double specificGravityInside = 3463 / (273 + Climate.TempInside);
-            double deltaP = 0.55 * buildingHeightFromFirstToTopOfTheShaft * (specificGravityOutside - specificGravityInside) + 0.03 * (specificGravityInside) * Math.Pow(Climate.WindVelocity, 2);
+            double specificGravityOutside = 3463 / (273 +(-25));
+            double specificGravityInside = 3463 / (273 + 20);
+            double deltaP = 0.55 * buildingHeightFromFirstToTopOfTheShaft * (specificGravityOutside - specificGravityInside) + 0.03 * (specificGravityInside) * Math.Pow(2, 2);
             double windowAirResistanceNorm = (1 / airResistanceNorm) * Math.Pow(deltaP / 10, (double)(2 / 3));
             double g = 9.81;
-            return (windowArea / (windowAirResistanceNorm*3600)) * Math.Pow(((pressureCurrentFloorStaircase + g* (floorLevelCurrent + 0.5 * (2.1)) * (1.31 - 1.2))), 0.67) ;
+            return (windowArea / (windowAirResistanceNorm*3600)) * Math.Pow(((pressureCurrentFloorStaircase + g* (floorLevelCurrent + 0.5 * (2.1)) * (specificGravityOutside - specificGravityInside))), 0.67) ;
         }
 }
 

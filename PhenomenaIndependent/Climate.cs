@@ -14,6 +14,8 @@ namespace a01.Shared.Functions{
         private double densityOutside;
         private double densityInside;
         private double densitySupply;
+        private double specificGravityOutside;
+        private double specificGravityInside ;
 
         public double TempOutside { get; set; }
         public double TempInside { get; set; }
@@ -57,5 +59,8 @@ namespace a01.Shared.Functions{
                 return densitySupply;
             }
         }
+
+        public double SpecificGravityOutside { get => 3463 / (273 + TempOutside); }
+        public double SpecificGravityInside { get => 3463 / (273 + TempInside); }
     }
 }
